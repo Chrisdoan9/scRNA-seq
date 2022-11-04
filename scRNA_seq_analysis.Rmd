@@ -1,0 +1,320 @@
+---
+title: "scRNA-Seq"
+author: "Chris Doan"
+date: "2022-09-08"
+output: pdf_document
+---
+
+```{r}
+install.packages('BiocManager')
+BiocManager::install('multtest')
+install.packages('metap')
+```
+
+
+```{r setup, include=FALSE}
+library(Seurat)
+library(ggplot2)
+library(tidyverse)
+library(gridExtra)
+```
+
+```{r, load the dataset 1}
+mtx_obj_NC <- ReadMtx(mtx = 'scRNA_seq/NC/matrix.mtx.gz',
+        features = 'scRNA_seq/NC/features.tsv.gz',
+        cells = 'scRNA_seq/NC/barcodes.tsv.gz')
+```
+
+```{r}
+str(mtx_obj_NC)
+```
+
+
+```{r, initiate Seurat object 1}
+seurat_mtx_NC <- CreateSeuratObject(counts = mtx_obj_NC, project = 'CV', min.cells = 5)
+```
+
+```{r}
+cells <- WhichCells(seurat_mtx_NC)
+```
+
+
+```{r}
+seurat_mtx_NC@meta.data
+```
+
+```{r}
+AddMetaData(object = seurat_mtx_NC, metadata =  )
+```
+
+
+```{r, MT read 1}
+seurat_mtx_NC[['percent.mt']] <- PercentageFeatureSet(seurat_mtx_NC, pattern = '^MT-')
+```
+
+```{r, filtering 1}
+seurat_mtx_NC <- subset(seurat_mtx_NC, subset = nCount_RNA < 40000 & 
+                                   nFeature_RNA > 500 &
+                                   percent.mt <5)
+```
+
+
+
+
+```{r, Normalize data 1}
+seurat_mtx_NC <- NormalizeData(object = seurat_mtx_NC)
+```
+
+
+```{r, Quality control 1}
+VlnPlot(seurat_mtx_NC, features = c('nFeature_RNA','nCount_RNA','percent.mt'), ncol = 3) +
+  geom_smooth(method = 'lm')
+
+FeatureScatter(seurat_mtx_NC, feature1 = 'nCount_RNA',feature2 = 'nFeature_RNA') +
+  geom_smooth(method = 'lm')
+```
+
+```{r}
+seurat_mtx_NC <- FindVariableFeatures(object = seurat_mtx_NC)
+```
+
+```{r}
+top10 <- head(VariableFeatures(seurat_mtx_NC),10)
+```
+
+```{r}
+plot1 <- VariableFeaturePlot(seurat_mtx_NC)
+LabelPoints(plot = plot1, points = top10, rebel = TRUE)
+```
+
+```{r}
+seurat_mtx_NC@meta.data$condition <- vector1
+```
+
+
+```{r, load the dataset 2}
+mtx_obj_VV <- ReadMtx(mtx = 'scRNA_seq/VV/matrix.mtx.gz',
+        features = 'scRNA_seq/VV/features.tsv.gz',
+        cells = 'scRNA_seq/VV/barcodes.tsv.gz')
+```
+
+```{r, initiate Seurat object 2}
+seurat_mtx_VV <- CreateSeuratObject(counts = mtx_obj_VV, project = 'CV', min.cells = 5)
+```
+
+```{r, MT read 2}
+seurat_mtx_VV[['percent.mt']] <- PercentageFeatureSet(seurat_mtx_VV, pattern = '^MT-')
+```
+
+```{r, filtering 2}
+seurat_mtx_VV <- subset(seurat_mtx_VV, subset = nCount_RNA < 40000 & 
+                                   nFeature_RNA > 500 &
+                                   percent.mt <5)
+```
+
+```{r, Normalize data 2}
+seurat_mtx_VV <- NormalizeData(object = seurat_mtx_VV)
+```
+
+```{r, Quality control 2}
+VlnPlot(seurat_mtx_VV, features = c('nFeature_RNA','nCount_RNA','percent.mt'), ncol = 3) +
+  geom_smooth(method = 'lm')
+
+FeatureScatter(seurat_mtx_VV, feature1 = 'nCount_RNA',feature2 = 'nFeature_RNA') +
+  geom_smooth(method = 'lm')
+```
+
+```{r}
+seurat_mtx_VV <- FindVariableFeatures(object = seurat_mtx_VV)
+```
+
+```{r}
+seurat_mtx_VV@meta.data
+```
+```{r}
+seurat_mtx_VV@meta.data$condition <- vector2
+```
+
+```{r}
+merged_seurat <- merge(seurat_mtx_NC, y = c(seurat_mtx_VV),
+                       add.cell.ids = c('NC','VV'),
+                       project = 'CV')
+```
+
+```{r}
+merged_seurat@meta.data
+```
+
+```{r}
+merged_seurat$sample <- rownames(merged_seurat@meta.data)
+```
+
+```{r}
+list_seurat$sample <- rownames(list_seurat@meta.data)
+```
+
+```{r}
+merged_seurat$sample
+```
+
+
+```{r}
+merged_seurat@meta.data <- separate(merged_seurat@meta.data, col = 'sample', into = c('condition','Barcode'),
+                                    sep = '_')
+```
+
+```{r}
+list_seurat <- list(seurat_mtx_NC, seurat_mtx_VV)
+```
+
+```{r}
+list_seurat
+```
+
+```{r}
+CV.list1 <- SplitObject(merged_seurat, split.by = 'condition')
+```
+
+```{r}
+CV.list <- SplitObject(list_seurat, split.by = "condition")
+```
+
+
+```{r}
+features <- SelectIntegrationFeatures(object.list = CV.list1)
+```
+
+```{r}
+features <- SelectIntegrationFeatures(object.list = list_seurat)
+```
+
+```{r}
+CV.anchors <- FindIntegrationAnchors(object.list = list_seurat
+                                     , anchor.features = features)
+```
+
+```{r}
+CV.anchors <- FindIntegrationAnchors(object.list = CV.list1
+                                     , anchor.features = features)
+```
+
+```{r}
+# this command creates an 'integrated' data assay
+CV.combined <- IntegrateData(anchorset = CV.anchors)
+```
+
+```{r}
+DefaultAssay(CV.combined) <- "integrated"
+```
+
+```{r}
+DefaultAssay(merged_seurat) <- "integrated"
+```
+
+
+```{r}
+CV.combined <- ScaleData(CV.combined, verbose = FALSE)
+CV.combined <- RunPCA(CV.combined, npcs = 20, verbose = FALSE)
+CV.combined <- RunUMAP(CV.combined, reduction = "pca", dims = 1:20)
+CV.combined <- FindNeighbors(CV.combined, reduction = "pca", dims = 1:20)
+CV.combined <- FindClusters(CV.combined, resolution = 0.5)
+```
+
+```{r}
+CV.combined <- RunPCA(CV.combined)
+```
+
+```{r}
+ElbowPlot(CV.combined)
+```
+
+```{r}
+CV.combined@meta.data
+```
+
+
+```{r}
+CV.combined@meta.data$condition_1 <- CV.combined@meta.data$condition
+CV.combined@meta.data <- unite(CV.combined@meta.data, "condition_cluster", condition_1, seurat_clusters, sep = "_")
+```
+
+```{r}
+merged_seurat <- ScaleData(merged_seurat)
+CV.combined <- RunPCA(CV.combined, npcs = 30, verbose = FALSE)
+CV.combined <- RunUMAP(CV.combined, reduction = "pca", dims = 1:30)
+CV.combined <- FindNeighbors(CV.combined, reduction = "pca", dims = 1:30)
+CV.combined <- FindClusters(CV.combined, resolution = 0.5)
+```
+
+```{r}
+p1 <- DimPlot(CV.combined, reduction = "umap", group.by = 'condition_cluster')
+p2 <- DimPlot(CV.combined, reduction = "umap", label = TRUE, repel = TRUE)
+p1 + p2
+#ggsave('integrate2_UMAP_cluster_condition.png')
+```
+
+```{r}
+DimPlot(CV.combined, reduction = "umap", split.by = "condition")
+#ggsave('compare_integrate_UMAP_cluster_condition.png')
+```
+
+```{r}
+DimPlot(merged_seurat, reduction = "umap", split.by = "condition")
+```
+
+
+```{r}
+#CV.harmony <- CV.combined %>% 
+#  RunHarmony(group.by.vars = 'condition', plot_convergence = F)
+```
+
+```{r}
+# find all markers of cluster 2
+cluster1.markers <- FindMarkers(CV.harmony, ident.1 = 1, min.pct = 0.25)
+head(cluster1.markers, n = 5)
+```
+
+```{r}
+# For performing differential expression after integration, we switch back to the original
+# data
+DefaultAssay(CV.combined) <- "RNA"
+uk.markers <- FindConservedMarkers(CV.combined, ident.1 = 2, grouping.var = "cell_types", verbose = FALSE)
+head(uk.markers)
+```
+
+```{r}
+Ident <- SetIdent(CV.combined, value = 'condition')
+```
+
+```{r}
+#cluster2.markers <- FindMarkers(CV.combined, ident.1 = 2, min.pct = 0.25)
+#head(cluster2.markers, n = 5)
+```
+
+```{r}
+# find markers for every cluster compared to all remaining cells, report only the positive
+# ones
+Idents(CV.combined) <- CV.combined$condition_cluster
+CV.markers <- FindAllMarkers(CV.combined, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
+CV.markers %>%
+    group_by(cluster) %>%
+    slice_min(n = 2, order_by = avg_log2FC)
+```
+```{r}
+# find markers for every cluster compared to all remaining cells, report only the positive
+# ones
+#Idents(CV.combined) <- CV.combined$condition_cluster
+#CV.markers <- FindAllMarkers(CV.combined, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
+CV.markers %>%
+    group_by(cluster) %>%
+    slice_max(n = 2, order_by = avg_log2FC)
+```
+
+```{r}
+FeaturePlot(CV.combined, features = c('MKX'), split.by = 'condition',min.cutoff = 'q10')
+```
+
+```{r}
+save.image('check.Rdata')
+```
+

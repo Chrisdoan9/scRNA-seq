@@ -1,0 +1,73 @@
+---
+title: "cell_types"
+author: "Chris Doan"
+date: "2022-09-21"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+options(tinytex.verbose = TRUE)
+library(scCATCH)
+library(harmony)
+library(Seurat)
+library(ggplot2)
+library(tidyverse)
+library(gridExtra)
+```
+
+## Cell type annotation based on tissue info.
+
+```{r error=F,warning=F, message=F}
+options(tinytex.verbose = TRUE)
+mtx_obj_NC <- ReadMtx(mtx = 'scRNA_seq/NC/matrix.mtx.gz',
+        features = 'scRNA_seq/NC/features.tsv.gz',
+        cells = 'scRNA_seq/NC/barcodes.tsv.gz')
+seurat_mtx_NC <- CreateSeuratObject(counts = mtx_obj_NC, project = 'CV', min.cells = 5)
+seurat_mtx_NC[['percent.mt']] <- PercentageFeatureSet(seurat_mtx_NC, pattern = '^MT-')
+seurat_mtx_NC <- subset(seurat_mtx_NC, subset = nCount_RNA < 40000 & 
+                                   nFeature_RNA > 500 &
+                                   percent.mt <5)
+seurat_mtx_NC <- NormalizeData(object = seurat_mtx_NC)
+seurat_mtx_NC <- FindVariableFeatures(object = seurat_mtx_NC)
+mtx_obj_VV <- ReadMtx(mtx = 'scRNA_seq/VV/matrix.mtx.gz',
+        features = 'scRNA_seq/VV/features.tsv.gz',
+        cells = 'scRNA_seq/VV/barcodes.tsv.gz')
+seurat_mtx_VV <- CreateSeuratObject(counts = mtx_obj_VV, project = 'CV', min.cells = 5)
+seurat_mtx_VV[['percent.mt']] <- PercentageFeatureSet(seurat_mtx_VV, pattern = '^MT-')
+seurat_mtx_VV <- subset(seurat_mtx_VV, subset = nCount_RNA < 40000 & 
+                                   nFeature_RNA > 500 &
+                                   percent.mt <5)
+seurat_mtx_VV <- NormalizeData(object = seurat_mtx_VV)
+seurat_mtx_VV <- FindVariableFeatures(object = seurat_mtx_VV)
+merged_seurat <- merge(seurat_mtx_NC, y = c(seurat_mtx_VV),
+                       add.cell.ids = c('NC','VV'),
+                       project = 'CV')
+merged_seurat$sample <- rownames(merged_seurat@meta.data)
+merged_seurat@meta.data <- separate(merged_seurat@meta.data, col = 'sample', into = c('condition','Barcode'),
+                                    sep = '_')
+merged_seurat <- FindVariableFeatures(merged_seurat)
+merged_seurat <- ScaleData(merged_seurat)
+merged_seurat <- RunPCA(merged_seurat)
+merged_seurat <- RunUMAP(merged_seurat, reduction = "pca", dims = 1:20)
+merged_seurat <- FindNeighbors(merged_seurat, reduction = "pca", dims = 1:20)
+merged_seurat <- FindClusters(merged_seurat, resolution = 0.5)
+merged_seurat@meta.data$condition_1 <- merged_seurat@meta.data$condition
+CV.harmony <- merged_seurat %>% 
+  RunHarmony(group.by.vars = 'condition', plot_convergence = F)
+CV.harmony@meta.data <- unite(CV.harmony@meta.data, "condition_cluster", condition_1, seurat_clusters, sep = "_")
+vector <- CV.harmony@meta.data$condition_cluster
+counts.sparse <- CV.harmony@assays$RNA@data
+my_obj <- createscCATCH(data = counts.sparse[,1:2000], cluster = vector[1:2000])
+
+```
+
+```{r}
+options(tinytex.verbose = TRUE)
+my_obj <- findmarkergene(object = my_obj, if_use_custom_marker = T, species = "Human", marker = cellmatch, tissue = "Vein")
+my_obj <- findcelltype(object = my_obj)
+my_obj@celltype
+```
+
+
