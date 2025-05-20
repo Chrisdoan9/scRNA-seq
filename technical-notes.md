@@ -22,3 +22,21 @@ Example:
 	•	Takes all healthy cells together, and  
 	•	Takes all disease cells together, and  
 	•	Compares gene expression cell by cell, like there’s 20,000 “healthy” cells vs 20,000 “disease” cells.
+
+R1 Barcodes and UMI tells you which cell and which molecule the read came from  
+R2 cDNA (the actual gene sequence) tells you what gene was expressed  
+I1 is the 8 bp sample barcode  
+
+R1 [Cell Barcode][UMI][Spacer]
+
+```
+@A00489:28:HHWY3DSX2:1:1101:1000:1000 1:N:0:ATTACTCG
+AAACCTGAGAAACCATTTGCATCGT
++
+FFFFFFFFFFFFFFFFFFFFFFFFF
+```
+• First 16 bases: Cell barcode (e.g., AAACCTGAGAAACCAT)  
+• Next 10 bases: UMI (e.g., TTGCATCGT)  
+• Combined = 26 bp for R1
+
+
