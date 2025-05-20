@@ -39,4 +39,5 @@ FFFFFFFFFFFFFFFFFFFFFFFFF
 • Next 10 bases: UMI (e.g., TTGCATCGT)  
 • Combined = 26 bp for R1
 
+Barcode inclusion list (formerly barcode whitelist), cell barcode, 16 bases.
 
