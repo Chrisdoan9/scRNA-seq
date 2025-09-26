@@ -1,4 +1,4 @@
-CCA is one of Seurat’s batch correction methods, especially in earlier versions (like Seurat v2 and early v3).  
+CCA (Canonical Correlation Analysis) is one of Seurat’s batch correction methods, especially in earlier versions (like Seurat v2 and early v3).  
 	•	X = gene matrix from dataset A (cells × genes)  
 	•	Y = gene matrix from dataset B  
 CCA finds:  
