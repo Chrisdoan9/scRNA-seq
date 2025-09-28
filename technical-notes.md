@@ -1,3 +1,6 @@
+SingleCellExperiment: https://bioconductor.org/packages/release/bioc/vignettes/SingleCellExperiment/inst/doc/intro.html
+
+**Key seurat functions:**
 | Step                          | Seurat Function(s)                                             | Purpose                                                   |
 |-------------------------------|----------------------------------------------------------------|------------------------------------------------------------|
 | 1. Load Data                  | `Read10X()`, `CreateSeuratObject()`                            | Import raw matrix (from 10x, h5, or matrix)                |
