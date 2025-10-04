@@ -1,5 +1,5 @@
-SingleCellExperiment: https://bioconductor.org/packages/release/bioc/vignettes/SingleCellExperiment/inst/doc/intro.html
-
+SingleCellExperiment: https://bioconductor.org/packages/release/bioc/vignettes/SingleCellExperiment/inst/doc/intro.html  
+Metacell: https://www.nature.com/articles/s41587-023-01716-9  
 **Key seurat functions:**
 | Step                          | Seurat Function(s)                                             | Purpose                                                   |
 |-------------------------------|----------------------------------------------------------------|------------------------------------------------------------|
