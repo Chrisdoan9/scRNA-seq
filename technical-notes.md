@@ -42,5 +42,6 @@ FFFFFFFFFFFFFFFFFFFFFFFFF
 • Next 10 bases: UMI (e.g., TTGCATCGT)  
 • Combined = 26 bp for R1
 
-Barcode inclusion list (formerly barcode whitelist), cell barcode, 16 bases.
+Barcode inclusion list (formerly barcode whitelist), cell barcode, 16 bases.  
 
+QC, mitochondrial https://genomebiology.biomedcentral.com/articles/10.1186/s13059-025-03559-w
